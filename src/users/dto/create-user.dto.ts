@@ -22,16 +22,16 @@ export class CreateUserDto {
   @MinLength(6)
   password!: string;
 
-   @IsOptional()
+  @IsOptional()
   @IsString()
-  adresse!: string;
+  adresse?: string;
 
-   @IsOptional()
+  @IsOptional()
   @IsString()
-  photo!: string;
+  photo?: string;
 
-   @IsOptional()
+  @IsOptional()
   @IsString()
-  numeroCni!: string;
+  numeroCni?: string;
 
 }

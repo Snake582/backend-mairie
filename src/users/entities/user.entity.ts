@@ -6,6 +6,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { Request } from '../../request/entities/request.entity';
+import { Role } from '../enums/role.enum';
 
 @Entity('users')
 export class User {
@@ -43,6 +44,13 @@ export class User {
 
   @Column({ nullable: true, type: 'datetime' })
   resetPasswordCodeExpiresAt?: Date;
+
+  @Column({
+    type: 'enum',
+    enum: Role,
+    default: Role.USER,
+  })
+  role!: Role;
 
   @OneToMany(() => Request, (request) => request.user)
   requests!: Request[];

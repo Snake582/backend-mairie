@@ -51,7 +51,19 @@ export class UsersService {
   }
 
   async findAll() {
-    return await this.userRepository.find();
+    return await this.userRepository.find({
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        phone: true,
+        adresse: true,
+        numeroCni: true,
+        photo: true,
+        createdAt: true,
+        role: true,
+      },
+    });
   }
 
   async findOne(id: number) {
@@ -66,6 +78,7 @@ export class UsersService {
         numeroCni: true,
         photo: true,
         createdAt: true,
+        role: true,
       },
     });
   }
