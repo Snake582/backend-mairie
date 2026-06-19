@@ -30,14 +30,20 @@ export class User {
   createdAt!: Date;
 
   @Column({ nullable: true })
-adresse!: string;
+  adresse?: string;
 
-@Column({ nullable: true })
-photo!: string;
+  @Column({ nullable: true })
+  photo?: string;
 
-@Column({ nullable: true })
-numeroCni!: string;
+  @Column({ nullable: true })
+  numeroCni?: string;
 
-@OneToMany(() => Request, (request) => request.user)
-requests!: Request[];
+  @Column({ nullable: true })
+  resetPasswordCode?: string;
+
+  @Column({ nullable: true, type: 'datetime' })
+  resetPasswordCodeExpiresAt?: Date;
+
+  @OneToMany(() => Request, (request) => request.user)
+  requests!: Request[];
 }

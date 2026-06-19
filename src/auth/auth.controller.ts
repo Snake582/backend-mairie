@@ -38,8 +38,7 @@ resetPassword(
   @Body() dto: ResetPasswordDto,
 ) {
   return this.authService.resetPassword(
-    dto.token,
-    dto.password,
+    dto,
   );
 }
 }

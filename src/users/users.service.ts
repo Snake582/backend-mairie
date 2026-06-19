@@ -84,4 +84,19 @@ export class UsersService {
       password: hashedPassword,
     });
   }
+
+  async saveResetPasswordCode(id: number, code: string, expiresAt: Date) {
+    const hashedCode = await bcrypt.hash(code, 10);
+    await this.userRepository.update(id, {
+      resetPasswordCode: hashedCode,
+      resetPasswordCodeExpiresAt: expiresAt,
+    });
+  }
+
+  async clearResetPasswordCode(id: number) {
+    await this.userRepository.update(id, {
+      resetPasswordCode: () => 'NULL',
+      resetPasswordCodeExpiresAt: () => 'NULL',
+    });
+  }
 }
