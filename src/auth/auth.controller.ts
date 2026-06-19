@@ -21,4 +21,23 @@ export class AuthController {
       loginDto,
     );
   }
+
+  @Post('forgot-password')
+forgotPassword(
+  @Body() dto: ForgotPasswordDto,
+) {
+  return this.authService.forgotPassword(
+    dto.email,
+  );
+}
+
+@Post('reset-password')
+resetPassword(
+  @Body() dto: ResetPasswordDto,
+) {
+  return this.authService.resetPassword(
+    dto.token,
+    dto.password,
+  );
+}
 }

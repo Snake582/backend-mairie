@@ -12,6 +12,8 @@ import { UsersModule } from '../users/users.module';
 
 import { JwtStrategy } from './strategies/jwt.strategy';
 
+import { MailerModule } from '@nestjs-modules/mailer'
+
 @Module({
   imports: [
     UsersModule,
@@ -23,6 +25,17 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 
       signOptions: {
         expiresIn: '7d',
+      },
+    }),
+    MailerModule.forRoot({
+      transport: {
+        host: process.env.MAIL_HOST,
+        port: Number(process.env.MAIL_PORT),
+        secure: false,
+        auth: {
+          user: process.env.MAIL_USER,
+          pass: process.env.MAIL_PASSWORD,
+        },
       },
     }),
   ],

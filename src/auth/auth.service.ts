@@ -1,5 +1,6 @@
 import {
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 
@@ -11,9 +12,11 @@ import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
+  userRepository: any;
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private mailerService: MailerService,
   ) {}
 
   async login(loginDto: LoginDto) {
@@ -56,4 +59,53 @@ export class AuthService {
       },
     };
   }
+
+  async forgotPassword(email: string) {
+  const user = await this.userRepository.findOne({
+    where: { email },
+  });
+
+  if (!user) {
+    throw new NotFoundException(
+      'Utilisateur introuvable',
+    );
+  }
+
+  const token = this.jwtService.sign(
+    {
+      id: user.id,
+    },
+    {
+      secret: process.env.JWT_SECRET,
+      expiresIn: '15m',
+    },
+  );
+
+  const resetLink =
+    `${process.env.FRONTEND_URL}` +
+    `/reset-password?token=${token}`;
+
+  await this.mailerService.sendMail({
+    to: email,
+    subject:
+      'Réinitialisation du mot de passe',
+    html: `
+      <h2>Sunu Mairie</h2>
+
+      <p>
+      Cliquez sur le bouton ci-dessous
+      pour réinitialiser votre mot de passe.
+      </p>
+
+      <a href="${resetLink}">
+        Réinitialiser mon mot de passe
+      </a>
+    `,
+  });
+
+  return {
+    message:
+      'Email de réinitialisation envoyé',
+  };
+}
 }

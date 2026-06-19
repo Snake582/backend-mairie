@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { RequestModule } from './request/request.module';
+import { ForgotPasswordModule } from './forgot-password/forgot-password.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { RequestModule } from './request/request.module';
     UsersModule,
     AuthModule,
     RequestModule,
+    ForgotPasswordModule,
   ],
   controllers: [AppController],
   providers: [AppService],
