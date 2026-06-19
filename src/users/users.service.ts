@@ -44,7 +44,7 @@ export class UsersService {
     return await this.userRepository.save(user);
   }
 
-  async findByEmail(email: string) {
+  async findByEmailWithPassword(email: string) {
     return await this.userRepository.findOne({
       where: { email },
     });
@@ -77,5 +77,11 @@ export class UsersService {
     );
 
     return this.findOne(id);
+  }
+
+  async updatePassword(id: number, hashedPassword: string) {
+    await this.userRepository.update(id, {
+      password: hashedPassword,
+    });
   }
 }
