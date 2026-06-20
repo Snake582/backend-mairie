@@ -1,24 +1,24 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
-
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { MailerService } from '@nestjs-modules/mailer';
+import { MailService } from '../mail/mail.service';
+import { randomInt } from 'crypto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-    private mailerService: MailerService,
-    private configService: ConfigService,
+    private mailService: MailService,
   ) {}
 
   async login(loginDto: LoginDto) {
@@ -47,6 +47,7 @@ export class AuthService {
     const payload = {
       sub: user.id,
       email: user.email,
+      role: user.role,
     };
 
     return {
@@ -58,6 +59,7 @@ export class AuthService {
         fullName: user.fullName,
         email: user.email,
         phone: user.phone,
+        role: user.role,
       },
     };
   }
@@ -71,50 +73,35 @@ export class AuthService {
       );
     }
 
-    const token = this.jwtService.sign(
-      {
-        id: user.id,
-      },
-      {
-        secret: this.configService.get<string>('JWT_RESET_SECRET'),
-        expiresIn: '15m',
-      },
+    const code = String(randomInt(100000, 999999));
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    await this.usersService.saveResetPasswordCode(user.id, code, expiresAt);
+
+    const result = await this.mailService.sendResetPasswordCode(
+      email,
+      user.fullName,
+      code,
     );
 
-    const resetLink =
-      `${this.configService.get<string>('FRONTEND_URL')}` +
-      `/reset-password?token=${token}`;
-
-    await this.mailerService.sendMail({
-      to: email,
-      subject:
-        'Réinitialisation du mot de passe',
-      html: `
-        <h2>Sunu Mairie</h2>
-
-        <p>
-        Cliquez sur le bouton ci-dessous
-        pour réinitialiser votre mot de passe.
-        </p>
-
-        <a href="${resetLink}">
-          Réinitialiser mon mot de passe
-        </a>
-      `,
-    });
+    if (!result.success) {
+      throw new Error('Échec de l\'envoi de l\'email de réinitialisation');
+    }
 
     return {
       message:
-        'Email de réinitialisation envoyé',
+        'Code de réinitialisation envoyé',
     };
   }
 
-  async resetPassword(token: string, password: string) {
-    const payload = this.jwtService.verify(token, {
-      secret: this.configService.get<string>('JWT_RESET_SECRET'),
-    });
+  async resetPassword(dto: ResetPasswordDto) {
+    if (dto.password !== dto.confirmPassword) {
+      throw new BadRequestException(
+        'Les mots de passe ne correspondent pas',
+      );
+    }
 
-    const user = await this.usersService.findOne(payload.id);
+    const user = await this.usersService.findByEmailWithPassword(dto.email);
 
     if (!user) {
       throw new NotFoundException(
@@ -122,9 +109,31 @@ export class AuthService {
       );
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    if (
+      !user.resetPasswordCode ||
+      !user.resetPasswordCodeExpiresAt ||
+      new Date() > user.resetPasswordCodeExpiresAt
+    ) {
+      throw new UnauthorizedException(
+        'Code expiré ou invalide',
+      );
+    }
+
+    const isCodeValid = await bcrypt.compare(
+      dto.code,
+      user.resetPasswordCode,
+    );
+
+    if (!isCodeValid) {
+      throw new UnauthorizedException(
+        'Code invalide',
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
 
     await this.usersService.updatePassword(user.id, hashedPassword);
+    await this.usersService.clearResetPasswordCode(user.id);
 
     return {
       message:
